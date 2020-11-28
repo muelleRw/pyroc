@@ -19,7 +19,7 @@ cur.execute(readings)
 
 insert_query = "INSERT INTO readings (date, type, value) VALUES (?, ?, ?)"
 points = [[10, 0, 0], [10, 0, 1], [10, 0, 2]]
-x = op_180(os.getenv("COM_PORT"), os.getenv("BAUD"))
+x = op_180(os.getenv("COM_PORT"), int(os.getenv("BAUD")))
 
 while True:
     vals = x.poll(points)
@@ -27,4 +27,4 @@ while True:
     print(vals)
     cur.execute(insert_query, (datetime.now(), "Temperature", temp))
     con.commit()
-    time.sleep(os.getenv("FREQUENCY"))
+    time.sleep(int(os.getenv("FREQUENCY")))
