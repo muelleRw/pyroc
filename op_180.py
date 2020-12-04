@@ -45,6 +45,7 @@ class op_180:
         self.ser.baudrate = serial_baud
         self.ser.port = serial_com
         self.ser.timeout = serial_timeout
+        self.ser.write_timeout = 1
 
         self.tags = pd.read_csv("points.csv")
         self._CRC_FUNC = crcmod.mkCrcFun(0x18005, initCrc=0x0000, xorOut=0x0000)
