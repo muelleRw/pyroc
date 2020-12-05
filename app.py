@@ -1,6 +1,5 @@
 import os
-from flask import Flask, render_template
-from celery import Celery
+from flask import Flask, render_template, request
 import json
 import sqlite3
 import pandas as pd
@@ -10,33 +9,6 @@ import numpy as np
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'top-secret!'
 
-# Celery configuration
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-
-# Initialize Celery
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
-
-@celery.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_tasks(5.0, test.s(), name='Poll Roc and add to DB')
-
-@celery.task
-def poll_roc(self):
-    con = sqlite3.connect(os.getenv("DB_PATH"))
-    cur = con.cursor()
-
-    insert_query = "INSERT INTO readings (date, type, value) VALUES (?, ?, ?)"
-    points = [[10, 0, 0], [10, 0, 1], [10, 0, 2]]
-    x = op_180(os.getenv("COM_PORT"), int(os.getenv("BAUD")))
-
-    vals = x.poll(points)
-    temp = vals["Temperature"][0]
-    cur.execute(insert_query, (datetime.now(), "Temperature", temp))
-    con.commit()
-
-
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
 def dashboard():
@@ -45,8 +17,8 @@ def dashboard():
 @app.route('/historic_temp', methods=['GET'])
 def get_historic_temp():
     con = sqlite3.connect(os.getenv("DB_PATH"))
-    sql = """ SELECT date, ROUND(value,2) as temperature FROM readings """#WHERE date >= date('now', '-2 day')"""
-    df = pd.read_sql(sql, con)
+    sql = """ SELECT date, ROUND(value,2) as temperature FROM readings WHERE date BETWEEN :start AND :end"""
+    df = pd.read_sql(sql, con, params={"start": request.args.get("start"), "end": request.args.get("end")})
     df.replace({np.nan: None}, inplace=True)
     chart = line_chart(df)
     return chart
@@ -58,7 +30,6 @@ def get_current_temp():
     sql = """ SELECT ROUND(value,2) FROM readings WHERE date = (SELECT MAX(date) FROM readings) """
     cur.execute(""" SELECT ROUND(value,2) FROM readings WHERE date = (SELECT MAX(date) FROM readings) """)
     data = cur.fetchone()[0]
-    print(data)
     chart = throttle_chart(data)
     return chart
 
@@ -118,7 +89,11 @@ def line_chart(data):
             "xaxis": {
                 "anchor": "y",
                 "domain": [0, 1],
-                "type": "date"
+                "type": "date",
+                "fixedrange": True,
+            },
+            "yaxis": {
+                "fixedrange": True
             },
             "paper_bgcolor": 'rgba(250,250,250,255)',
             "plot_bgcolor": 'rgba(250,250,250,255)'
@@ -127,4 +102,4 @@ def line_chart(data):
     return mydict
 
 if __name__ == '__main__':
-    app.run(host="192.168.1.104", debug=True)
+    app.run(host="192.168.1.106", debug=True)

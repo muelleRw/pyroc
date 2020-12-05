@@ -5,6 +5,8 @@ from collections import namedtuple
 import pandas as pd
 import struct
 import crcmod
+import os
+
 class op_180:
     header_message = "<6ii"
     header_names = (
@@ -47,7 +49,7 @@ class op_180:
         self.ser.timeout = serial_timeout
         self.ser.write_timeout = 1
 
-        self.tags = pd.read_csv("points.csv")
+        self.tags = pd.read_csv(os.path.abspath(globals().get("__file__", "./points.csv")) )
         self._CRC_FUNC = crcmod.mkCrcFun(0x18005, initCrc=0x0000, xorOut=0x0000)
         self.message_crc = Struct('crc' / Int16ul)
 
@@ -109,7 +111,3 @@ class op_180:
         except Exception as e:
             print(e)
             self.ser.close()
-            
-#from op_180 import op_180
-#points = [[10, 0, 0], [10, 0, 1], [10, 0, 2]]
-#x = op_180("COM1", 9600)
