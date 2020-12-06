@@ -19,6 +19,7 @@ def get_historic_temp():
     con = sqlite3.connect(os.getenv("DB_PATH"))
     sql = """ SELECT date, ROUND(value,2) as temperature FROM readings WHERE date BETWEEN :start AND :end"""
     df = pd.read_sql(sql, con, params={"start": request.args.get("start"), "end": request.args.get("end")})
+    print(df)
     df.replace({np.nan: None}, inplace=True)
     chart = line_chart(df)
     return chart
@@ -27,7 +28,6 @@ def get_historic_temp():
 def get_current_temp():
     con = sqlite3.connect(os.getenv("DB_PATH"))
     cur = con.cursor()
-    sql = """ SELECT ROUND(value,2) FROM readings WHERE date = (SELECT MAX(date) FROM readings) """
     cur.execute(""" SELECT ROUND(value,2) FROM readings WHERE date = (SELECT MAX(date) FROM readings) """)
     data = cur.fetchone()[0]
     chart = throttle_chart(data)
@@ -54,11 +54,12 @@ def throttle_chart(data):
             
         ],
         "layout": {
-            "height": 400,
-            "width": 400,
             "paper_bgcolor": 'rgba(250,250,250,255)',
             "plot_bgcolor": 'rgba(250,250,250,255)'
         },
+        "config": {
+            "responsive": True
+        }
     }
     return mydict
 
@@ -84,8 +85,6 @@ def line_chart(data):
             
         ],
         "layout": {
-            "height": 400,
-            "width": 800,
             "xaxis": {
                 "anchor": "y",
                 "domain": [0, 1],
@@ -98,6 +97,9 @@ def line_chart(data):
             "paper_bgcolor": 'rgba(250,250,250,255)',
             "plot_bgcolor": 'rgba(250,250,250,255)'
         },
+        "config": {
+            "responsive": True
+        }
     }
     return mydict
 

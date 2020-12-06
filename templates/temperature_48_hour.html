@@ -63,7 +63,7 @@
                     type: 'GET',
                     url: "{{ url_for('get_current_temp') }}",
                     success: function (data) {
-                        Plotly.newPlot('throttle_graph', data['data'], data['layout']);
+                        Plotly.newPlot('throttle_graph', data['data'], data['layout'], data['config']);
                     }
                 });
             }
@@ -83,7 +83,7 @@
                     url: "{{ url_for('get_historic_temp') }}",
                     data: sender,
                     success: function (data) {
-                        Plotly.newPlot('line_graph', data['data'], data['layout']);
+                        Plotly.newPlot('line_graph', data['data'], data['layout'], data['config']);
                     }
                 });
             }
